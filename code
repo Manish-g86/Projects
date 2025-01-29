@@ -1,1 +1,89 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
+# Load the dataset
+dataset = pd.read_csv(r"Dataset.csv")
+le = LabelEncoder()
+dataset['Date'] = le.fit_transform(dataset['Date'])
+dataset['Day'] = le.fit_transform(dataset['Day'])
+# Create a dictionary mapping day names to their numerical values
+day_mapping = {day_name: encoded_day + 1 for encoded_day, day_name in
+enumerate(le.classes_)}
+
+# Create a dictionary mapping zone names to their numerical values
+zone_mapping = {chr(ord('A') + i): i + 1 for i in range(9)}
+
+# Create a dictionary mapping output labels to their numerical values
+output_mapping = {1: 'Less Traffic', 2: 'Medium Traffic', 3: 'High Traffic', 4: 'Very High Traffic', 5:'Extremely High Traffic'}
+
+# Selecting input features and target variable
+X = dataset[['Day', 'CodedDay', 'Zone', 'Weather', 'Temperature']].values
+y = dataset['Traffic'].values
+
+# Splitting into Train and Test data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
+
+# Featuring Scaling
+sc_X = StandardScaler()
+X_train = sc_X.fit_transform(X_train)
+X_test = sc_X.transform(X_test)
+
+# Fitting the Random Forest Regression
+regressor = RandomForestRegressor(n_estimators=300, random_state=0)
+regressor.fit(X_train, y_train)
+def predict_traffic(day, zone, weather, temperature):
+
+# Encoding the user input for 'Day' and 'Zone'
+day_encoded = day_mapping[day]
+zone_encoded = zone_mapping[zone]
+
+# Creating a numpy array with user input
+user_input = np.array([[day_encoded, 0, zone_encoded, weather, temperature]])
+# Scaling the user input
+user_input_scaled = sc_X.transform(user_input)
+
+# Predicting the result for user input
+user_prediction = regressor.predict(user_input_scaled)
+
+# Rounding the prediction to the nearest integer
+user_prediction_rounded = np.round(user_prediction)
+
+# Mapping the numeric prediction to the output labels
+output_label = output_mapping.get(int(user_prediction_rounded[0]), 'Unknown')
+return output_label
+
+# Streamlit app
+def main():
+  st.title("Traffic Prediction App")
+  
+  # Selectbox for day
+  selected_day = st.selectbox("Select the day:", list(day_mapping.keys()))
+  
+  # Selectbox for zone
+  selected_zone = st.selectbox("Select the zone:", list(zone_mapping.keys()))
+  weather = st.number_input("Enter the weather:", value=0)
+  temperature = st.number_input("Enter the temperature:")
+  
+  # Make prediction
+  if st.button("Predict Traffic"):
+  prediction = predict_traffic(selected_day, selected_zone, weather, temperature)
+  st.success(f"Predicted Traffic: {prediction}")
+  
+  # Evaluate the model on the test set
+  y_pred = regressor.predict(X_test)
+  
+  # Calculate metrics
+  mae = mean_absolute_error(y_test, y_pred)
+  mse = mean_squared_error(y_test, y_pred)
+  r2 = r2_score(y_test, y_pred)
+  st.info(f"Mean Absolute Error: {mae:.2f}")
+  st.info(f"Mean Squared Error: {mse:.2f}")
+  st.info(f"R-squared: {r2:.2f}")
+
+if __name__ == "__main__":
+  main()
