@@ -17,7 +17,7 @@ This web application predicts traffic conditions based on historical data using 
 4. The results, including predicted traffic speed, congestion level, and expected travel time, are displayed on the interface.
 
 ## Requirements
-- Python 3.x
+- Python 
 - Streamlit
 - scikit-learn
 - pandas
@@ -28,4 +28,4 @@ This web application predicts traffic conditions based on historical data using 
 - **SVM**: A powerful classifier that finds the optimal hyperplane to separate different traffic conditions.
 
 ## Conclusion
-This traffic prediction web application is a great tool for analyzing and forecasting traffic conditions.
+This traffic prediction web application is a tool for analyzing and forecasting traffic conditions.
